@@ -89,24 +89,27 @@ for (year_i in as.character(2000:2011)) {
   print(year_i)
   # loop through nodal events, getting number of nodes separating pairs
   for (node_i in 1:length(nodes)) {
+    print(paste("node", node_i))
     nodalFragments <- which(nodesMatrix[,year_i] == nodes[node_i])
-    # if just one extant fragment associated with this node, skip
+    # if just one extant fragment associated with this node (i.e. itself), skip
     if (length(nodalFragments) != 1) {
-      # creating 0-valued vector of same length
+      # creating blank vector of same length
       nodalFragments_splits <- rep(NA, length(nodalFragments))
       # looping through years, counting years in which a split was made (!=NA)
       for (fragment_i in 1:length(nodalFragments)) {
         yearVect <- 2012:as.numeric(year_i)
-        splits <- which(!is.na(nodesMatrix[fragment_i, as.character(yearVect)]))
+        splits <- which(!is.na(nodesMatrix[nodalFragments[fragment_i], as.character(yearVect)]))
         nSplits <- length(splits)
-        if (nSplits != 0) nodalFragments_splits[fragment_i] <- nSplits
+        if (nSplits == 0) {stop("nSplits is 0")}
+        nodalFragments_splits[fragment_i] <- nSplits
       }
       print(nodalFragments_splits)
       pairwise <- matrix(NA, nrow=length(nodalFragments_splits), ncol=length(nodalFragments_splits))
       for (pair_i in 1:length(nodalFragments_splits)) {
         pairwise[,pair_i] <- nodalFragments_splits + nodalFragments_splits[pair_i]
       }
-        print(pairwise)
     }
   }
 }
+splits
+nodalFragments_splits
