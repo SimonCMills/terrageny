@@ -8,14 +8,16 @@ load("terrageny.RData")
 #createTerrUT(unitTestDir="ut_terrstats/", yearRange=2000:2012)
 #constructTerrageny(inPath="ut_terrstats/dynamicSingle/", outPath="ut_terrstats/", inFileStart="year_", 
 #                   fileType=".tif", overwrite=T)
-#load("ut_terrstats/terrageny.RData")
+load("ut_terrstats/terrageny.RData")
 #View (terra.2)
 
 # interested in fragments that exist in 2013
 terra <- terra.2[which(terra.2$end.type == "exists"),]
 # ignoring fragments which have remained unchanged since time 0 (and are therefore
 # completely unconnected)
-terra <- terra[-which(terra$ancestor.end.ID == ""),]
+if(any(terra$ancestor.end.ID == "")) {
+  terra <- terra[-which(terra$ancestor.end.ID == ""),]
+}
 nExists <- length(terra$start.ID)
 # constructing pairwise nodes matrix
 pairwiseMatrix_nodes <- matrix(NA, nrow=nExists, ncol=nExists)
@@ -48,14 +50,17 @@ for (i in 1:length(terra$start.ID)) {
   nodesMatrix[i, frag_i_ancestor.t] <- frag_i_ancestor
 }
 
+View(nodesMatrix)
 ################################################################################
 pairwiseNodal <- matrix(NA, nrow=nExists, ncol=nExists)
+pairwiseDist <- matrix(NA, nrow=nExists, ncol=nExists)
 
 # loop over years in nodesMatrix (2011:2000)
 for (year_i in as.character(2000:2012)) {
   # get list of nodal events in year_i (ignoring NA)
   nodes <- unique(nodesMatrix[,year_i])
   if (any(is.na(nodes))) {nodes <- nodes[-which(is.na(nodes))]}
+  # counter
   print("year:")
   print(year_i)
   # loop through nodal events, getting number of nodes separating pairs
@@ -74,24 +79,33 @@ for (year_i in as.character(2000:2012)) {
         if (nSplits == 0) {stop("nSplits is 0")}
         nodalFragments_splits[fragment_i] <- nSplits
       }
-      print(nodalFragments_splits)
-      pairwise <- matrix(NA, nrow=length(nodalFragments_splits), ncol=length(nodalFragments_splits), 
-                         dimnames=list(nodalFragments, nodalFragments))
+      #print(nodalFragments_splits)
+      pairwiseNodes_node_i <- matrix(NA, nrow=length(nodalFragments_splits), 
+                                ncol=length(nodalFragments_splits), 
+                                dimnames=list(nodalFragments, nodalFragments))
+      
       for (pair_i in 1:length(nodalFragments_splits)) {
         # -1 to account for shared node at split
-        pairwise[,pair_i] <- nodalFragments_splits + nodalFragments_splits[pair_i] - 1
+        pairwiseNodes_node_i[,pair_i] <- nodalFragments_splits + nodalFragments_splits[pair_i] - 1
       }
-      for (i in colnames(pairwise)) {
-        for (j in rownames(pairwise)) {
-          pairwiseNodal[as.numeric(j), as.numeric(i)] <- pairwise[j,i]
+      age <- (2012-as.numeric(year_i))*2 - 2
+      for (i in colnames(pairwiseNodes_node_i)) {
+        for (j in rownames(pairwiseNodes_node_i)) {
+          pairwiseNodal[as.numeric(j), as.numeric(i)] <- pairwiseNodes_node_i[j,i]
+          pairwiseDist[as.numeric(j), as.numeric(i)] <- age
         }
       }
     }
   }
-  diag(pairwiseNodal) <- NA
+  # removes cells above diagonal, which are mirror image 
+  pairwiseNodal[upper.tri(pairwiseNodal, diag=T)] <- NA
+  pairwiseDist[upper.tri(pairwiseDist, diag=T)] <- NA
 }
+min(pairwiseDist, na.rm=T)
 hist(pairwiseNodal)
-image(pairwiseNodal)
+xx <- pairwiseNodal 
+xx[upper.tri(xx)] <- NA
+image(pairwiseDist)
 ################################################################################
 # function 2: computing terragenetic distinctiveness. 
 timestep <- as.character(2000:2012)

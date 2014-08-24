@@ -25,7 +25,9 @@ nearestNeighbour <- function(clumpedRast, clump.ids="", size.vect="") {
   
   # ignore clumps over ten% of area
   clump.ids[size.vect > ncell(clumpedRast)/10] <- NA
-  
+  #
+  distance.vect <- rep(NA, clumpedRast@data@max)
+  #
   for (i in clump.ids[-is.na(clump.ids)]) {
     print(i)
     cellList <- which(clumpedRast[] == i)
