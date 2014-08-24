@@ -19,35 +19,39 @@ if(any(terra$ancestor.end.ID == "")) {
   terra <- terra[-which(terra$ancestor.end.ID == ""),]
 }
 nExists <- length(terra$start.ID)
-# constructing pairwise nodes matrix
-pairwiseMatrix_nodes <- matrix(NA, nrow=nExists, ncol=nExists)
+
+
 # creating matrix containing fragment histories (recording each split)
 nodesMatrix <- matrix(NA, nrow=length(terra$start.ID), ncol=13, 
                       dimnames=list(1:length(terra$start.ID), 2012:2000))
+
+# assigning fragment ancestor node
+ancestor.list <- as.character(terra$ancestor.end.ID)
+# getting year-component of this 
+ancestor.t <- substr(ancestor.list, 1, 4)
+
 # looping through fragments to construct history
 for (i in 1:length(terra$start.ID)) {
   # assigning fragment start node
-  nodesMatrix[i, as.character(terra$start.t)[i]] <- terra$start.ID[i]
-  # assigning fragment ancestor node
-  ancestor.list <- as.character(terra$ancestor.end.ID)
-  # getting year-component of this 
-  ancestor.t <- substr(ancestor.list, 1, 4)
+  #nodesMatrix[i, as.character(terra$start.t)[i]] <- terra$start.ID[i]
   # placing ID in matrix
-  nodesMatrix[i, ancestor.t[i]] <- terra$ancestor.end.ID[i]
+  nodesMatrix[i, ancestor.t[i]] <- ancestor.list[i]
   # assigning ancestor's ancestor node
-  frag_i <- terra[i,]
-  frag_i_ancestor <- frag_i$ancestor.end.ID
-  frag_i_ancestor.t <- substr(frag_i_ancestor, 1, 4)
-  nodesMatrix[i, frag_i_ancestor.t] <- frag_i_ancestor
+  #frag_i <- terra[i,]
+  frag_i_ancestor <- ancestor.list[i]
+  frag_i_ancestor.t <- ancestor.t[i]
+  #frag_i_ancestor <- frag_i$ancestor.end.ID
+  #frag_i_ancestor.t <- substr(frag_i_ancestor, 1, 4)
+  #nodesMatrix[i, frag_i_ancestor.t] <- frag_i_ancestor
   #looping through
   while(frag_i_ancestor.t != "2000") {
-    frag_i1 <- terra.2[which(terra.2$end.ID == frag_i_ancestor),]
-    frag_i_ancestor <- frag_i1$ancestor.end.ID
+    frag_i <- terra.2[which(terra.2$end.ID == frag_i_ancestor),]
+    frag_i_ancestor <- frag_i$ancestor.end.ID
     if(frag_i_ancestor == "") break()
-    frag_i_ancestor.t <- substr(frag_i1$ancestor.end.ID, 1, 4)
+    frag_i_ancestor.t <- substr(frag_i$ancestor.end.ID, 1, 4)
     nodesMatrix[i, frag_i_ancestor.t] <- frag_i_ancestor
   }
-  nodesMatrix[i, frag_i_ancestor.t] <- frag_i_ancestor
+  #nodesMatrix[i, frag_i_ancestor.t] <- frag_i_ancestor
 }
 
 View(nodesMatrix)
@@ -156,9 +160,7 @@ for (i in 1:n.exists) {
   }
   nodes.matrix[i, frag_i_ancestor.t] <- frag_i_ancestor
 }
-
-
-
+################################################################################
 
 
 # loop over years in nodesMatrix (2011:2000)
